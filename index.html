@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سامانه مشاوره کنکور | استاد حسام</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Vazirmatn Font -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0f766e', // Teal 700
+                        secondary: '#14b8a6', // Teal 500
+                        accent: '#f59e0b', // Amber 500
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="text-gray-800 h-screen overflow-hidden flex flex-col">
+
+    <!-- ================= AUTH SCREEN ================= -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-gradient-to-br from-primary to-gray-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 fade-in">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-teal-100 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-student text-4xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">سامانه مشاوره استاد حسام</h1>
+                <p class="text-gray-500 mt-2 text-sm">لطفاً وارد حساب کاربری خود شوید</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
+                    <input type="text" id="username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition" placeholder="مثال: hesam">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition" placeholder="••••••">
+                </div>
+                <div id="login-error" class="text-red-500 text-sm hidden">نام کاربری یا رمز عبور اشتباه است.</div>
+                <button type="submit" class="w-full bg-primary hover:bg-teal-800 text-white font-bold py-3 rounded-lg transition duration-300 shadow-lg transform hover:-translate-y-1">
+                    ورود به پنل
+                </button>
+            </form>
+            <div class="mt-6 text-center text-xs text-gray-400">
+                <p>نسخه نمایشی (Demo)</p>
+                <p>مشاور: hesam / admin | دانش‌آموز: ali / 123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP LAYOUT ================= -->
+    <div id="app-layout" class="hidden flex h-screen">
+        
+        <!-- Sidebar -->
+        <aside class="bg-white w-64 hidden md:flex flex-col border-l border-gray-200 z-10 shadow-lg">
+            <div class="h-16 flex items-center justify-center border-b border-gray-100">
+                <span class="text-xl font-bold text-primary flex items-center gap-2">
+                    <i class="ph ph-graduation-cap"></i>
+                    پنل مشاوره
+                </span>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto py-4 px-3 space-y-2" id="sidebar-menu">
+                <!-- Menu items injected by JS -->
+            </div>
+
+            <div class="p-4 border-t border-gray-100">
+                <button onclick="logout()" class="flex items-center gap-3 text-red-500 hover:bg-red-50 w-full px-4 py-2 rounded-lg transition">
+                    <i class="ph ph-sign-out text-xl"></i>
+                    <span>خروج</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+            
+            <!-- Mobile Header -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shadow-sm z-20">
+                <div class="flex items-center gap-3">
+                    <button class="md:hidden text-gray-600 text-2xl" onclick="toggleMobileMenu()">
+                        <i class="ph ph-list"></i>
+                    </button>
+                    <h2 id="page-title" class="text-lg font-bold text-gray-800">داشبورد</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <p id="user-name-display" class="text-sm font-bold text-gray-800">کاربر</p>
+                        <p id="user-role-display" class="text-xs text-gray-500">نقش</p>
+                    </div>
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600">
+                        <i class="ph ph-user text-xl"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Mobile Menu Overlay -->
+            <div id="mobile-menu" class="fixed inset-0 bg-gray-800 bg-opacity-50 z-30 hidden" onclick="toggleMobileMenu()">
+                <div class="absolute right-0 top-0 bottom-0 w-64 bg-white shadow-xl flex flex-col" onclick="event.stopPropagation()">
+                    <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                        <span class="text-xl font-bold text-primary">منو</span>
+                    </div>
+                    <div class="flex-1 py-4 px-3 space-y-2" id="mobile-sidebar-menu">
+                        <!-- Menu items -->
+                    </div>
+                    <div class="p-4 border-t">
+                        <button onclick="logout()" class="flex items-center gap-3 text-red-500 w-full px-4 py-2">
+                            <i class="ph ph-sign-out"></i> خروج
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <main id="main-content" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+                <!-- Dynamic Content Goes Here -->
+            </main>
+
+        </div>
+    </div>
+
+    <!-- Javascript Logic -->
+    <script>
+        // --- 1. MOCK DATA & STATE ---
+        const initialData = {
+            users: [
+                { id: '1', username: 'hesam', password: 'admin', name: 'استاد حسام', role: 'consultant' },
+                { id: '2', username: 'ali', password: '123', name: 'علی رضایی', role: 'student', consultantId: '1', grade: 'دوازدهم تجربی' },
+                { id: '3', username: 'sara', password: '123', name: 'سارا احمدی', role: 'student', consultantId: '1', grade: 'یازدهم ریاضی' }
+            ],
+            plans: [
+                { id: 'p1', studentId: '2', date: '1402-10-01', day: 'شنبه', subject: 'زیست شناسی', topic: 'فصل 3: حواس', duration: 120, status: 'done' },
+                { id: 'p2', studentId: '2', date: '1402-10-01', day: 'شنبه', subject: 'ریاضی', topic: 'مثلثات', duration: 90, status: 'pending' },
+                { id: 'p3', studentId: '2', date: '1402-10-02', day: 'یکشنبه', subject: 'شیمی', topic: 'اسید و باز', duration: 90, status: 'pending' },
+                { id: 'p4', studentId: '3', date: '1402-10-01', day: 'شنبه', subject: 'حسابان', topic: 'حد و پیوستگی', duration: 120, status: 'done' }
+            ],
+            messages: [
+                { id: 'm1', fromId: '1', toId: '2', text: 'سلام علی، گزارش هفته قبل عالی بود. همین روند رو ادامه بده.', time: '10:30' },
+                { id: 'm2', fromId: '2', toId: '1', text: 'سلام استاد، ممنون. برای شیمی کمی مشکل دارم.', time: '10:45' }
+            ],
+            contents: [
+                { id: 'c1', title: 'تکنیک‌های تست‌زنی سرعتی', type: 'article', category: 'مشاوره' },
+                { id: 'c2', title: 'جمع‌بندی زیست دهم', type: 'video', category: 'آموزشی' }
+            ]
+        };
+
+        // Initialize LocalStorage if empty
+        if (!localStorage.getItem('konkur_data')) {
+            localStorage.setItem('konkur_data', JSON.stringify(initialData));
+        }
+
+        const db = JSON.parse(localStorage.getItem('konkur_data'));
+        let currentUser = JSON.parse(localStorage.getItem('konkur_current_user'));
+
+        // --- 2. AUTHENTICATION ---
+        const authScreen = document.getElementById('auth-screen');
+        const appLayout = document.getElementById('app-layout');
+        const loginForm = document.getElementById('login-form');
+
+        function init() {
+            if (currentUser) {
+                showApp();
+            } else {
+                authScreen.classList.remove('hidden');
+            }
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            
+            const user = db.users.find(user => user.username === u && user.password === p);
+
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('konkur_current_user', JSON.stringify(user));
+                document.getElementById('login-error').classList.add('hidden');
+                showApp();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('konkur_current_user');
+            location.reload();
+        }
+
+        function showApp() {
+            authScreen.classList.add('hidden');
+            appLayout.classList.remove('hidden');
+            
+            document.getElementById('user-name-display').innerText = currentUser.name;
+            document.getElementById('user-role-display').innerText = currentUser.role === 'consultant' ? 'مشاور ارشد' : 'دانش‌آموز';
+
+            renderMenu();
+            // Default route
+            navigate(currentUser.role === 'consultant' ? 'c-dashboard' : 's-dashboard');
+        }
+
+        // --- 3. NAVIGATION & ROUTING ---
+        const mainContent = document.getElementById('main-content');
+        const pageTitle = document.getElementById('page-title');
+
+        const routes = {
+            'c-dashboard': { title: 'داشبورد مشاور', render: renderConsultantDashboard, role: 'consultant' },
+            'c-students': { title: 'مدیریت دانش‌آموزان', render: renderStudentList, role: 'consultant' },
+            'c-planning': { title: 'برنامه‌ریزی', render: renderPlanningTool, role: 'consultant' },
+            's-dashboard': { title: 'داشبورد من', render: renderStudentDashboard, role: 'student' },
+            's-plan': { title: 'برنامه هفتگی', render: renderMyPlan, role: 'student' },
+            'content': { title: 'بانک محتوا', render: renderContent, role: 'all' },
+            'messages': { title: 'پیام‌ها', render: renderMessages, role: 'all' },
+        };
+
+        function renderMenu() {
+            const menuItems = [
+                { id: 'dashboard', label: 'داشبورد', icon: 'ph-squares-four', route: currentUser.role === 'consultant' ? 'c-dashboard' : 's-dashboard' },
+                { id: 'students', label: 'دانش‌آموزان', icon: 'ph-users', route: 'c-students', show: currentUser.role === 'consultant' },
+                { id: 'planning', label: 'برنامه‌ریزی', icon: 'ph-calendar-check', route: currentUser.role === 'consultant' ? 'c-planning' : 's-plan' },
+                { id: 'content', label: 'محتوای آموزشی', icon: 'ph-book-open', route: 'content' },
+                { id: 'messages', label: 'پیام‌ها', icon: 'ph-chat-circle-text', route: 'messages' },
+            ];
+
+            const html = menuItems.filter(i => i.show !== false).map(item => `
+                <button onclick="navigate('${item.route}')" class="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-teal-50 hover:text-primary rounded-lg transition duration-200">
+                    <i class="ph ${item.icon} text-xl"></i>
+                    <span class="font-medium">${item.label}</span>
+                </button>
+            `).join('');
+
+            document.getElementById('sidebar-menu').innerHTML = html;
+            document.getElementById('mobile-sidebar-menu').innerHTML = html;
+        }
+
+        function navigate(routeKey) {
+            const route = routes[routeKey];
+            if (!route) return;
+
+            pageTitle.innerText = route.title;
+            mainContent.innerHTML = '<div class="flex justify-center pt-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>';
+            
+            // Close mobile menu if open
+            document.getElementById('mobile-menu').classList.add('hidden');
+
+            setTimeout(() => {
+                mainContent.innerHTML = ''; // Clear loader
+                route.render();
+            }, 200); // Slight delay for smooth feel
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // --- 4. RENDER FUNCTIONS ---
+
+        // >>> Consultant Dashboard
+        function renderConsultantDashboard() {
+            const students = db.users.filter(u => u.role === 'student');
+            const totalPlans = db.plans.length;
+            
+            mainContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 fade-in">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="bg-blue-100 p-3 rounded-xl text-blue-600"><i class="ph ph-users text-2xl"></i></div>
+                        <div><p class="text-sm text-gray-500">تعداد دانش‌آموزان</p><h3 class="text-2xl font-bold">${students.length}</h3></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="bg-green-100 p-3 rounded-xl text-green-600"><i class="ph ph-check-circle text-2xl"></i></div>
+                        <div><p class="text-sm text-gray-500">برنامه‌های فعال</p><h3 class="text-2xl font-bold">${totalPlans}</h3></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="bg-amber-100 p-3 rounded-xl text-amber-600"><i class="ph ph-clock text-2xl"></i></div>
+                        <div><p class="text-sm text-gray-500">پیام‌های جدید</p><h3 class="text-2xl font-bold">2</h3></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 fade-in">
+                    <h3 class="text-lg font-bold mb-4">عملکرد کلی دانش‌آموزان</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="consultantChart"></canvas>
+                    </div>
+                </div>
+            `;
+
+            // Render Chart
+            setTimeout(() => {
+                const ctx = document.getElementById('consultantChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: students.map(s => s.name),
+                        datasets: [{
+                            label: 'ساعات مطالعه هفته (ساعت)',
+                            data: [35, 42], // Mock data
+                            backgroundColor: '#0f766e',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: { maintainAspectRatio: false, responsive: true }
+                });
+            }, 100);
+        }
+
+        // >>> Student Dashboard
+        function renderStudentDashboard() {
+            const myPlans = db.plans.filter(p => p.studentId === currentUser.id && p.status === 'pending');
+            const completed = db.plans.filter(p => p.studentId === currentUser.id && p.status === 'done').length;
+            
+            mainContent.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
+                    <!-- Left Column: Status -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-gradient-to-l from-primary to-teal-800 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+                            <div class="relative z-10">
+                                <h2 class="text-2xl font-bold mb-2">سلام ${currentUser.name}! 👋</h2>
+                                <p class="opacity-90">امروز عالی عمل کردی. 3 برنامه دیگر باقی مانده.</p>
+                            </div>
+                            <i class="ph ph-trophy absolute -left-4 -bottom-4 text-9xl text-white opacity-10"></i>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                            <h3 class="font-bold mb-4 flex items-center gap-2">
+                                <i class="ph ph-chart-line-up text-primary"></i> روند پیشرفت
+                            </h3>
+                            <div class="h-56">
+                                <canvas id="studentChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: To Do -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-fit">
+                        <h3 class="font-bold mb-4 flex items-center justify-between">
+                            <span>برنامه امروز</span>
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">${new Date().toLocaleDateString('fa-IR')}</span>
+                        </h3>
+                        <div class="space-y-3">
+                            ${myPlans.length === 0 ? '<p class="text-gray-400 text-sm text-center">برنامه‌ای ندارید!</p>' : ''}
+                            ${myPlans.map(p => `
+                                <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-primary transition group">
+                                    <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm font-bold">
+                                        ${p.duration}'
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-sm text-gray-800">${p.subject}</h4>
+                                        <p class="text-xs text-gray-500">${p.topic}</p>
+                                    </div>
+                                    <button onclick="togglePlanStatus('${p.id}')" class="text-gray-300 hover:text-primary transition">
+                                        <i class="ph ph-circle text-2xl"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="navigate('s-plan')" class="w-full mt-4 py-2 text-sm text-primary font-bold border border-primary rounded-lg hover:bg-teal-50 transition">
+                            مشاهده برنامه کامل
+                        </button>
+                    </div>
+                </div>
+            `;
+
+             // Render Chart
+             setTimeout(() => {
+                const ctx = document.getElementById('studentChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه'],
+                        datasets: [{
+                            label: 'ساعات مطالعه',
+                            data: [4, 6, 5, 8, 6, 7],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: { maintainAspectRatio: false, responsive: true }
+                });
+            }, 100);
+        }
+
+        // >>> Student List (Consultant View)
+        function renderStudentList() {
+            const students = db.users.filter(u => u.role === 'student');
+            mainContent.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden fade-in">
+                    <table class="w-full text-right">
+                        <thead class="bg-gray-50 text-gray-500 text-sm">
+                            <tr>
+                                <th class="p-4">نام دانش‌آموز</th>
+                                <th class="p-4">پایه/رشته</th>
+                                <th class="p-4">وضعیت</th>
+                                <th class="p-4">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${students.map(s => `
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="p-4 font-bold text-gray-800">${s.name}</td>
+                                    <td class="p-4 text-gray-600">${s.grade}</td>
+                                    <td class="p-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">فعال</span></td>
+                                    <td class="p-4">
+                                        <button class="text-primary hover:text-teal-800 ml-2" title="برنامه"><i class="ph ph-calendar-plus text-xl"></i></button>
+                                        <button onclick="navigate('messages')" class="text-gray-400 hover:text-gray-600" title="پیام"><i class="ph ph-chat-circle text-xl"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // >>> Planning (General Table View)
+        function renderMyPlan() {
+            // Simplified: Just showing a list for demo
+            const plans = db.plans.filter(p => p.studentId === currentUser.id);
+            renderPlanTable(plans, false);
+        }
+        
+        function renderPlanningTool() {
+            // Consultant sees all plans (simplified for demo to show first student's plans)
+            const studentId = '2'; // Hardcoded for demo
+            const plans = db.plans.filter(p => p.studentId === studentId);
+            
+            mainContent.innerHTML = `
+                <div class="mb-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800 text-sm">
+                    در حال ویرایش برنامه برای: <strong>علی رضایی</strong>
+                </div>
+                ${getPlanTableHTML(plans, true)}
+            `;
+        }
+
+        function renderPlanTable(plans, isEditable) {
+            mainContent.innerHTML = getPlanTableHTML(plans, isEditable);
+        }
+
+        function getPlanTableHTML(plans, isEditable) {
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden fade-in">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold">برنامه هفتگی</h3>
+                        ${isEditable ? '<button onclick="alert(\'قابلیت افزودن در نسخه دمو غیرفعال است\')" class="bg-primary text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"><i class="ph ph-plus"></i> افزودن</button>' : ''}
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right min-w-[600px]">
+                            <thead class="bg-gray-50 text-gray-500 text-sm">
+                                <tr>
+                                    <th class="p-4">روز</th>
+                                    <th class="p-4">درس</th>
+                                    <th class="p-4">مبحث</th>
+                                    <th class="p-4">مدت</th>
+                                    <th class="p-4">وضعیت</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                ${plans.map(p => `
+                                    <tr>
+                                        <td class="p-4 font-medium">${p.day}</td>
+                                        <td class="p-4 text-primary font-bold">${p.subject}</td>
+                                        <td class="p-4 text-gray-600 text-sm">${p.topic}</td>
+                                        <td class="p-4 text-gray-500">${p.duration} دقیقه</td>
+                                        <td class="p-4">
+                                            ${p.status === 'done' 
+                                                ? '<span class="text-green-600 flex items-center gap-1"><i class="ph ph-check-circle-fill"></i> انجام شد</span>' 
+                                                : '<span class="text-gray-400 flex items-center gap-1"><i class="ph ph-circle"></i> مانده</span>'}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function togglePlanStatus(id) {
+            const plan = db.plans.find(p => p.id === id);
+            if (plan) {
+                plan.status = plan.status === 'pending' ? 'done' : 'pending';
+                localStorage.setItem('konkur_data', JSON.stringify(db));
+                // Re-render current view
+                if(currentUser.role === 'student') renderStudentDashboard();
+            }
+        }
+
+        // >>> Educational Content
+        function renderContent() {
+            mainContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in">
+                    ${db.contents.map(c => `
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group">
+                            <div class="h-32 bg-gray-200 flex items-center justify-center text-gray-400 group-hover:bg-teal-50 group-hover:text-primary transition">
+                                <i class="ph ${c.type === 'video' ? 'ph-play-circle' : 'ph-article'} text-5xl"></i>
+                            </div>
+                            <div class="p-5">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-primary bg-teal-50 px-2 py-1 rounded">${c.category}</span>
+                                    <i class="ph ph-download-simple text-gray-400 hover:text-gray-600 cursor-pointer"></i>
+                                </div>
+                                <h3 class="font-bold text-gray-800 mb-2">${c.title}</h3>
+                                <button class="text-sm text-gray-500 hover:text-primary flex items-center gap-1 mt-4">
+                                    مشاهده محتوا <i class="ph ph-arrow-left"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // >>> Messages
+        function renderMessages() {
+            const relevantMessages = db.messages.filter(m => m.fromId === currentUser.id || m.toId === currentUser.id);
+            
+            mainContent.innerHTML = `
+                <div class="flex flex-col h-[calc(100vh-140px)] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden fade-in">
+                    <!-- Chat Header -->
+                    <div class="p-4 border-b border-gray-100 bg-gray-50">
+                        <h3 class="font-bold flex items-center gap-2">
+                            <i class="ph ph-chat-circle-text text-primary"></i> 
+                            گفتگو با ${currentUser.role === 'consultant' ? 'دانش‌آموز' : 'مشاور'}
+                        </h3>
+                    </div>
+                    
+                    <!-- Chat Area -->
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4" id="message-container">
+                        ${relevantMessages.map(m => {
+                            const isMe = m.fromId === currentUser.id;
+                            return `
+                                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                                    <div class="max-w-[70%] ${isMe ? 'bg-primary text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'} p-3 rounded-2xl shadow-sm">
+                                        <p class="text-sm">${m.text}</p>
+                                        <span class="text-[10px] opacity-70 block mt-1 ${isMe ? 'text-left' : 'text-right'}">${m.time}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="p-4 border-t border-gray-100 bg-white">
+                        <form onsubmit="sendMessage(event)" class="flex gap-2">
+                            <input type="text" id="msg-input" placeholder="پیام خود را بنویسید..." class="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-primary">
+                            <button type="submit" class="bg-primary text-white w-12 h-12 rounded-xl flex items-center justify-center hover:bg-teal-800 transition shadow-lg">
+                                <i class="ph ph-paper-plane-right text-xl"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+            // Scroll to bottom
+            const container = document.getElementById('message-container');
+            if(container) container.scrollTop = container.scrollHeight;
+        }
+
+        function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const newMessage = {
+                id: 'm' + Date.now(),
+                fromId: currentUser.id,
+                toId: currentUser.role === 'consultant' ? '2' : '1', // Mock: always sends to other party
+                text: text,
+                time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })
+            };
+
+            db.messages.push(newMessage);
+            localStorage.setItem('konkur_data', JSON.stringify(db));
+            input.value = '';
+            renderMessages();
+        }
+
+        // Start App
+        init();
+
+    </script>
+</body>
+</html>
